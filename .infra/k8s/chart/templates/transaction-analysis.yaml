@@ -37,10 +37,14 @@ spec:
           image: {{ .Values.image }}
           ports:
             - containerPort: 5000
+          env:
+             # TODO: remove this var
+            - name: APP_SETTINGS
+              value: "config.Dev"
           readinessProbe:
             httpGet:
               port: 5000
-              # TODO:
+              # TODO: implement healthcheck
               path: /api/v1/config
             initialDelaySeconds: 5
             timeoutSeconds: 1
@@ -48,7 +52,7 @@ spec:
           livenessProbe:
             httpGet:
               port: 5000
-              # TODO:
+              # TODO: implement healthcheck
               path: /api/v1/config
             initialDelaySeconds: 15
             timeoutSeconds: 1
