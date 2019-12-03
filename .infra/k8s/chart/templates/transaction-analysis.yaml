@@ -37,10 +37,14 @@ spec:
           image: {{ .Values.image }}
           ports:
             - containerPort: 80
+          # TODO: remove this vars:
           env:
-             # TODO: remove this var
             - name: APP_SETTINGS
               value: "config.Dev"
+            - name: AWS_REGION
+              value: "eu-central-1"
+            - name: S3_BUCKET
+              value: "images"
           readinessProbe:
             httpGet:
               port: 80
