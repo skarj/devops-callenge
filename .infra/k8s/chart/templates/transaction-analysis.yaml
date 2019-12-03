@@ -36,14 +36,14 @@ spec:
         - name: transaction-analysis
           image: {{ .Values.image }}
           ports:
-            - containerPort: 5000
+            - containerPort: 80
           env:
              # TODO: remove this var
             - name: APP_SETTINGS
               value: "config.Dev"
           readinessProbe:
             httpGet:
-              port: 5000
+              port: 80
               # TODO: implement healthcheck
               path: /api/v1/config
             initialDelaySeconds: 5
@@ -51,7 +51,7 @@ spec:
             periodSeconds: 15
           livenessProbe:
             httpGet:
-              port: 5000
+              port: 80
               # TODO: implement healthcheck
               path: /api/v1/config
             initialDelaySeconds: 15
@@ -76,7 +76,7 @@ spec:
     app: transaction-analysis
   ports:
     - name: http
-      port: 5000
+      port: 80
       protocol: TCP
 ---
 apiVersion: networking.istio.io/v1alpha3
@@ -125,4 +125,4 @@ spec:
         - destination:
             host: transaction-analysis
             port:
-              number: 5000
+              number: 80
