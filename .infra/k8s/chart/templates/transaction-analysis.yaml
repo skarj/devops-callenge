@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.metadata.name }}
+  name: {{ .Values.metadata.name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: transaction-analysis
+  template:
+    metadata:
+      labels:
+        app: transaction-analysis
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - transaction-analysis
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: transaction-analysis
+          image: {{ .Values.image }}
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              port: 5000
+              # TODO:
+              path: /api/v1/config
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              port: 5000
+              # TODO:
+              path: /api/v1/config
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 10m
+              memory: 200Mi
+            limits:
+              memory: 300Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-analysis
+  labels:
+    app: transaction-analysis
+spec:
+  selector:
+    app: transaction-analysis
+  ports:
+    - name: http
+      port: 5000
+      protocol: TCP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: transaction-analysis-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        {{- range .Values.hosts }}
+        - {{ . }}
+        {{- end }}
+      tls:
+        httpsRedirect: true
+    - port:
+        number: 443
+        name: https
+        protocol: HTTP
+      hosts:
+        {{- range .Values.hosts }}
+        - {{ . }}
+        {{- end }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: transaction-analysis
+spec:
+  hosts:
+    {{- range .Values.hosts }}
+    - {{ . }}
+    {{- end }}
+  gateways:
+    - transaction-analysis-gateway
+  http:
+    - match:
+        - port: 80
+        - port: 443
+      route:
+        - destination:
+            host: transaction-analysis
+            port:
+              number: 5000

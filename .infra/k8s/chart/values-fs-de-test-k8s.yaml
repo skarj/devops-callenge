@@ -1,0 +1,13 @@
+# Basic placeholders values
+metadata:
+  name: transaction-analysis
+
+replicas: 1
+hosts:
+  - transaction-analysis.svc.test.fs.safeties.de
+
+minReadySeconds: 30
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
